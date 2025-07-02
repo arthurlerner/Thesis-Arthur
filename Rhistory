@@ -1,0 +1,339 @@
+library(readxl)
+final_v_3 <- read_excel("F:/BACKUP GERAL 01.06.2020/UFSC/2025/Artigo 3 - Tese/FINAL/final v.4.xlsx",
+col_types = c("text", "numeric", "text",
+"numeric", "numeric", "text",
+"numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric","numeric",
+"numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "text", "numeric", "text",
+"text", "text", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "text", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric",
+"numeric", "numeric", "numeric"))
+summary(final_v_3)
+# Carregar pacotes necessários
+library(dplyr)
+final_v_4 <- final_v_3 %>%
+dplyr::mutate(
+ROE_log = ifelse(ROE > 0, log(ROE + 1), -log(1 + abs(ROE))),
+ROA_log = ifelse(ROA > 0, log(ROA + 1), -log(1 + abs(ROA))),
+LLPRatio_log = log1p(LLPRatio),  # log(1 + x), evita problemas com valores pequenos
+NIM_log = log1p(NIM),
+CostToIncome_log = log1p(CostToIncome),
+PER_log = ifelse(PER > 0, log(PER + 1), NA)  # Se PER pode ser negativo, evitar erro
+)
+# Verificar a transformação
+summary(final_v_4[, c("ROE_log", "ROA_log", "LLPRatio_log", "NIM_log", "CostToIncome_log", "PER_log")])
+summary(final_v_4)
+par(mfrow = c(2, 3))  # Organiza os gráficos em 2 linhas e 3 colunas
+hist(final_v_4$ROE_log, main = "Distribuição de ROE_log", col = "lightblue")
+hist(final_v_4$ROA_log, main = "Distribuição de ROA_log", col = "lightgreen")
+hist(final_v_4$LLPRatio_log, main = "Distribuição de LLPRatio_log", col = "lightcoral")
+hist(final_v_4$NIM_log, main = "Distribuição de NIM_log", col = "lightpink")
+hist(final_v_4$CostToIncome_log, main = "Distribuição de CostToIncome_log", col = "lightgoldenrod")
+hist(final_v_4$PER_log, main = "Distribuição de PER_log", col = "lightcyan")
+par(mfrow = c(1, 1))  # Reseta o layout de gráficos
+par(mar = c(4, 4, 2, 1))  # Ajusta as margens: c(bottom, left, top, right)
+par(mfrow = c(2, 3))  # Organiza em 2 linhas e 3 colunas
+hist(final_v_4$ROE, main = "ROE", col = "lightblue", xlab = "ROE")
+hist(final_v_4$ROA, main = "ROA", col = "lightgreen", xlab = "ROA")
+hist(final_v_4$LLPRatio, main = "LLPRatio", col = "lightcoral", xlab = "LLPRatio")
+hist(final_v_4$NIM, main = "NIM", col = "lightpink", xlab = "NIM")
+hist(final_v_4$CostToIncome, main = "CostToIncome", col = "lightgoldenrod", xlab = "CostToIncome")
+hist(final_v_4$PER, main = "PER", col = "lightcyan", xlab = "PER")
+par(mfrow = c(2, 3))  # Novamente 2 linhas e 3 colunas
+hist(final_v_4$ROE_log, main = "ROE_log", col = "blue", xlab = "ROE_log")
+hist(final_v_4$ROA_log, main = "ROA_log", col = "green", xlab = "ROA_log")
+hist(final_v_4$LLPRatio_log, main = "LLPRatio_log", col = "red", xlab = "LLPRatio_log")
+hist(final_v_4$NIM_log, main = "NIM_log", col = "purple", xlab = "NIM_log")
+hist(final_v_4$CostToIncome_log, main = "CostToIncome_log", col = "gold", xlab = "CostToIncome_log")
+hist(final_v_4$PER_log, main = "PER_log", col = "cyan", xlab = "PER_log")
+colnames(final_v_4)[colnames(final_v_4) == "Flesch-Kincaid"] <- "Flesch_Kincaid"
+colnames(final_v_4)[colnames(final_v_4) == "New_Dale-Chall"] <- "New_Dale_Chall"
+####Verificar se há valores NA nos identificadores #####
+sum(is.na(final_v_4$CNPJ))  # Deve ser 0
+sum(is.na(final_v_4$Year))  # Deve ser 0
+# Contar quantas observações únicas temos por painel
+length(unique(final_v_4$CNPJ))  # Número de indivíduos no painel
+length(unique(final_v_4$Year))  # Número de períodos
+# Verificar duplicatas
+table(duplicated(final_v_4[, c("CNPJ", "Year")]))  # Deve retornar apenas "FALSE"
+# Verificar quais CNPJs têm mais de uma entrada por ano
+duplicados <- final_v_4[duplicated(final_v_4[, c("CNPJ", "Year")]), ]
+print(duplicados)
+final_v_4 <- final_v_4[!duplicated(final_v_4[, c("CNPJ", "Year")]), ]
+final_v_4 <- final_v_4[!duplicated(final_v_4[, c("CNPJ", "Year")]), ]
+sum(is.na(final_v_4$CNPJ))  # Deve ser 0
+sum(is.na(final_v_4$Year))  # Deve ser 0
+summary(final_v_4)
+final_v_4 <- final_v_4 %>%
+dplyr::filter(ROE != "NA", ROA != "NA")
+#####renomear coluna######
+names(final_v_4)[names(final_v_4) == "File_Size_(KB)"] <- "File_Size_KB"
+names(final_v_4)[names(final_v_4) == "Type_Token_Ratio_(TTR)"] <- "Type_Token_Ratio_TTR"
+summary(final_v_4)
+library(dplyr)
+library(DescTools)  # Para Winsorize()
+# Carregar pacotes necessários
+library(dplyr)
+final_v_4 <- final_v_4 %>%
+dplyr::group_by(CNPJ) %>%
+dplyr::mutate(
+delta_roe_t1 = dplyr::lead(ROE, 1) - ROE,
+delta_roe_t2 = dplyr::lead(ROE, 2) - ROE,
+delta_roe_t3 = dplyr::lead(ROE, 3) - ROE
+) %>%
+dplyr::ungroup()
+summary(final_v_4)
+#### Winsorization ####
+final_v_4 <- final_v_4 %>%
+dplyr::mutate(
+ROE_NW = Winsorize(ROE, probs = c(0.01, 0.99), na.rm = TRUE),
+ROE_NW_2.5 = Winsorize(ROE, probs = c(0.025, 0.975), na.rm = TRUE),
+ROE_NW_5 = Winsorize(ROE, probs = c(0.05, 0.95), na.rm = TRUE),
+ROA_NW = Winsorize(ROA, probs = c(0.01, 0.99), na.rm = TRUE),
+ROA_NW_2.5 = Winsorize(ROA, probs = c(0.025, 0.975), na.rm = TRUE),
+ROA_NW_5 = Winsorize(ROA, probs = c(0.05, 0.95), na.rm = TRUE)
+)
+# Certifique-se de que o pacote DescTools está carregado
+library(DescTools)
+# Winsorizar delta_roe_t1 nos percentis 1% e 99%
+final_v_4 <- final_v_4 %>%
+dplyr::mutate(
+delta_roe_t1_NW = Winsorize(delta_roe_t1, probs = c(0.01, 0.99), na.rm = TRUE)
+)
+summary(final_v_4)
+final_v_4 <- final_v_4 %>%
+dplyr::mutate(
+log_WordCount = log(Word_Count),
+log_FileSize = log(File_Size_KB),
+log_PageCount = log(Page_Count)
+)
+library(plm)
+library(dplyr)
+# Filtra apenas as cooperativas ligadas a Centrais ou Confederações
+final_v_6_central_confed <- final_v_4 %>%
+dplyr::filter(DummyCentralEConfederacao == 1)
+nrow(final_v_6_central_confed)
+# Filtra apenas as cooperativas ligadas a Centrais ou Confederações
+final_v_7_LivreAdmissao <- final_v_4 %>%
+dplyr::filter(DummyLivreAdmissao == 1)
+#apenas as cooperativas que não são de livre admissão,
+final_v_8_NaoLivreAdmissao <- final_v_4 %>%
+dplyr::filter(DummyLivreAdmissao == 0)
+nrow(final_v_4)
+nrow(final_v_6_central_confed)
+nrow(final_v_7_LivreAdmissao)
+nrow(final_v_8_NaoLivreAdmissao)
+# 1. Rodar o modelo OLS com todas as variáveis
+ols_formula <- as.formula(
+ROE_NW ~ LIX_Index + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao +
+RegiaoDeAtuacao + factor(Year)
+)
+ols_model <- lm(ols_formula, data = final_v_4)
+# 2. Calcular o VIF
+library(car)
+vif(ols_model)
+library(dplyr)
+library(AER)
+# Garantir que Year seja numérico para ordenar corretamente
+final_v_4 <- final_v_4 %>%
+mutate(Year = as.numeric(as.character(Year)))
+library(dplyr)
+# Remover todas as colunas de lag antigas (se existirem)
+final_v_4 <- final_v_4 %>% select(-starts_with("lag_"))
+# Garantir que 'Year' é numérico
+final_v_4 <- final_v_4 %>%
+mutate(Year = as.numeric(as.character(Year))) %>%
+arrange(CNPJ, Year)
+library(plm)
+# Transformar temporariamente para painel
+pdata_temp <- pdata.frame(final_v_4, index = c("CNPJ", "Year"))
+# Criar defasagens principais diretamente no final_v_4
+final_v_4$lag_FileSize_1      <- plm::lag(pdata_temp$File_Size_KB, 1)
+final_v_4$lag_FileSize_2      <- plm::lag(pdata_temp$File_Size_KB, 2)
+final_v_4$lag_PageCount_1     <- plm::lag(pdata_temp$Page_Count, 1)
+final_v_4$lag_PageCount_2     <- plm::lag(pdata_temp$Page_Count, 2)
+final_v_4$lag_WordCount_1     <- plm::lag(pdata_temp$Word_Count, 1)
+final_v_4$lag_WordCount_2     <- plm::lag(pdata_temp$Word_Count, 2)
+# Log-transform
+final_v_4$lag_logFileSize_1   <- plm::lag(log(pdata_temp$File_Size_KB), 1)
+final_v_4$lag_logFileSize_2   <- plm::lag(log(pdata_temp$File_Size_KB), 2)
+final_v_4$lag_logPageCount_1  <- plm::lag(log(pdata_temp$Page_Count), 1)
+final_v_4$lag_logPageCount_2  <- plm::lag(log(pdata_temp$Page_Count), 2)
+final_v_4$lag_logWordCount_1  <- plm::lag(log(pdata_temp$Word_Count), 1)
+final_v_4$lag_logWordCount_2  <- plm::lag(log(pdata_temp$Word_Count), 2)
+# Legibilidade
+final_v_4$lag_LIX_1           <- plm::lag(pdata_temp$LIX_Index, 1)
+final_v_4$lag_LIX_2           <- plm::lag(pdata_temp$LIX_Index, 2)
+final_v_4$lag_RIX_1           <- plm::lag(pdata_temp$RIX_Index, 1)
+final_v_4$lag_RIX_2           <- plm::lag(pdata_temp$RIX_Index, 2)
+final_v_4$lag_ARI_1           <- plm::lag(pdata_temp$ARI_Index, 1)
+final_v_4$lag_ARI_2           <- plm::lag(pdata_temp$ARI_Index, 2)
+final_v_4$lag_FOG_1           <- plm::lag(pdata_temp$Fog_Index, 1)
+final_v_4$lag_FOG_2           <- plm::lag(pdata_temp$Fog_Index, 2)
+final_v_4$lag_SMOG_1          <- plm::lag(pdata_temp$SMOG_Index, 1)
+final_v_4$lag_SMOG_2          <- plm::lag(pdata_temp$SMOG_Index, 2)
+# 🔍 Verifique com exemplo
+final_v_4 %>%
+filter(CNPJ == 68987000186) %>%
+select(Year, File_Size_KB, lag_FileSize_1) %>%
+arrange(Year)
+library(AER)
+library(dplyr)
+# Garantir fatores
+final_v_4$RegiaoDeAtuacao <- as.factor(final_v_4$RegiaoDeAtuacao)
+final_v_4$Year <- as.factor(final_v_4$Year)
+final_v_4$Year <- as.numeric(as.character(final_v_4$Year))
+final_v_4 <- final_v_4 %>%
+mutate(Year = as.numeric(as.character(Year)))
+# Criar LAGS das explicativas############
+final_v_4 <- final_v_4 %>%
+dplyr::arrange(CNPJ, Year) %>%
+group_by(CNPJ) %>%
+dplyr::mutate(
+lag_FileSize_1 = lag(File_Size_KB, 1),
+lag_FileSize_2 = lag(File_Size_KB, 2),
+lag_logFileSize_1 = lag(log_FileSize, 1),
+lag_logFileSize_2 = lag(log_FileSize, 2),
+lag_PageCount_1 = lag(Page_Count, 1),
+lag_PageCount_2 = lag(Page_Count, 2),
+lag_logPageCount_1 = lag(log_PageCount, 1),
+lag_logPageCount_2 = lag(log_PageCount, 2),
+lag_WordCount_1 = lag(Word_Count, 1),
+lag_WordCount_2 = lag(Word_Count, 2),
+lag_logWordCount_1 = lag(log_WordCount, 1),
+lag_logWordCount_2 = lag(log_WordCount, 2)
+) %>%
+ungroup()
+# Garantir que RegiaoDeAtuacao e Year são fatores
+final_v_4$RegiaoDeAtuacao <- as.factor(final_v_4$RegiaoDeAtuacao)
+final_v_4$Year <- as.factor(final_v_4$Year)
+# Criar defasagens para índices de legibilidade
+final_v_4 <- final_v_4 %>%
+dplyr::arrange(CNPJ, Year) %>%
+group_by(CNPJ) %>%
+dplyr::mutate(
+# LIX
+lag_LIX_1 = lag(LIX_Index, 1),
+lag_LIX_2 = lag(LIX_Index, 2),
+# RIX
+lag_RIX_1 = lag(RIX_Index, 1),
+lag_RIX_2 = lag(RIX_Index, 2),
+# ARI
+lag_ARI_1 = lag(ARI_Index, 1),
+lag_ARI_2 = lag(ARI_Index, 2),
+# Fog
+lag_FOG_1 = lag(Fog_Index, 1),
+lag_FOG_2 = lag(Fog_Index, 2),
+# SMOG
+lag_SMOG_1 = lag(SMOG_Index, 1),
+lag_SMOG_2 = lag(SMOG_Index, 2)
+) %>%
+ungroup()
+####✅ 1. Cálculo dos instrumentos: médias regionais e anuais#####
+# Carregar pacotes
+library(dplyr)
+library(AER)  # para ivreg
+# Criar as variáveis instrumentais: médias por região e ano
+final_v_4 <- final_v_4 %>%
+dplyr::group_by(RegiaoDeAtuacao, Year) %>%
+dplyr::mutate(
+inst_FileSize = mean(File_Size_KB, na.rm = TRUE),
+inst_log_FileSize = mean(log_FileSize, na.rm = TRUE),
+inst_PageCount = mean(Page_Count, na.rm = TRUE),
+inst_log_PageCount = mean(log_PageCount, na.rm = TRUE),
+inst_WordCount = mean(Word_Count, na.rm = TRUE),
+inst_log_WordCount = mean(log_WordCount, na.rm = TRUE),
+inst_LIX = mean(LIX_Index, na.rm = TRUE),
+inst_RIX = mean(RIX_Index, na.rm = TRUE),
+inst_ARI = mean(ARI_Index, na.rm = TRUE),
+inst_FOG = mean(Fog_Index, na.rm = TRUE),
+inst_SMOG = mean(SMOG_Index, na.rm = TRUE),
+) %>%
+ungroup()
+summary(final_v_4)
+# OLS
+ols_log_FileSize <- lm(ROE_NW ~ log_FileSize + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_log_FileSize)
+# Carregar pacote
+library(plm)
+# Transformar os dados em painel
+pdata <- pdata.frame(final_v_4, index = c("CNPJ", "Year"))
+# Fórmula OLS
+ols_formula <- as.formula(
+ROE_NW ~ log_FileSize #+ BoardSizeBOD + TenureBOD
++ CCSize + CCLeverage
+#+ DummyCentralEConfederacao
+# + BigFour
++ DummyLivreAdmissao + RegiaoDeAtuacao + factor(Year)
+)
+# Rodar OLS com plm (modelo pooling)
+plm_ols <- plm(ols_formula, data = pdata, model = "pooling")
+summary(plm_ols)
+library(plm)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ Fog_Index + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
+summary(final_v_4)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ SMOG_Index + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ LIX_Index + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ RIX_Index + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ ARI_Index + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
+#---------------------------#
+# 1. MODELO OLS
+#---------------------------#
+ols_Fog_Index <- lm(ROE_NW ~ Word_Count + BoardSizeBOD + TenureBOD + CCSize + CCLeverage +
+DummyCentralEConfederacao + DummyLivreAdmissao + RegiaoDeAtuacao + Year,
+data = final_v_4)
+summary(ols_Fog_Index)
